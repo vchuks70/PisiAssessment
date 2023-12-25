@@ -3,7 +3,9 @@ using BusinessCore.Interface;
 using CoreObject;
 using CoreObject.DataTransferObject.Request;
 using CoreObject.DataTransferObject.Response;
+using CoreObject.Helpers;
 using CoreObject.Models;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
@@ -25,8 +27,48 @@ namespace BusinessCore.Service
         public UserAuthentication(IOptions<AppSettings> appSettings, AppDbContext appDbContext, IPasswordManagement passwordManagement)
         {
             _appSettings = appSettings.Value;
-            _appDbContext = appDbContext;
+            _appDbContext = appDbContext;   
             _passwordManagement = passwordManagement;
+        }
+
+        public async Task<IEnumerable<UserSubscriptionResponse>> GetAllUserSubscriptions()
+        {
+            //var ListOfUsers = await _appDbContext.Users.ToListAsync();
+
+            return (from user in _appDbContext.Users
+                      join sub in _appDbContext.Subscriptions on user.Id equals sub.UserId
+                      join service in _appDbContext.Services on sub.ServiceId equals service.Id
+                      select new
+                      {
+                          PhoneNumber = user.PhoneNumber,
+                          Service = service.Name,
+                          SubscriptionStatus = sub.Status,
+                          SubscriptionDate = sub.UpdatedDate
+                      }).GroupBy(x => x.PhoneNumber).Select(x => new UserSubscriptionResponse
+                      {
+                          PhoneNumber = x.Key,
+                          Subscriptions = x.Select(x => new UserSubscriptions
+                          {
+                              Service = x.Service,
+                              SubscriptionStatus = x.SubscriptionStatus == CoreObject.Enum.StatusEnum.Active ? ErrorMessage.UserSubscribed
+                                                      : x.SubscriptionStatus == CoreObject.Enum.StatusEnum.Inactive ? ErrorMessage.UserUnSubscribed : ErrorMessage.UserErrorSubscription,
+                              SubscriptionDate = x.SubscriptionDate
+                          }).ToList(),
+                      }).ToList();
+
+            //var ss  = rr.GroupBy(x => x.PhoneNumber).Select( x => new UserSubscriptionResponse
+            //{
+            //    PhoneNumber = x.Key,
+            //    Subscriptions = x.Select( x =>  new UserSubscriptions
+            //    {
+            //        Service = x.Service,
+            //        SubscriptionStatus = x.SubscriptionStatus == CoreObject.Enum.StatusEnum.Active ? ErrorMessage.UserSubscribed
+            //                                : x.SubscriptionStatus == CoreObject.Enum.StatusEnum.Inactive ? ErrorMessage.UserUnSubscribed : ErrorMessage.UserErrorSubscription,
+            //        SubscriptionDate = x.SubscriptionDate
+            //    } ).ToList(),
+            //}).ToList();
+
+            //return ListOfUsers;
         }
 
         public async Task<UserLoginResponse> Login(UserLoginInput request)
