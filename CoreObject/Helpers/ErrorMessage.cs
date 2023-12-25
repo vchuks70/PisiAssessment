@@ -10,6 +10,7 @@ namespace CoreObject.Helpers
     {
         public const string UserSubscribed = "User is subscribed";
         public const string UserUnSubscribed = "User is not subscribed";
+        public const string UserErrorSubscription = "User subscription status not found";
         public const string UserAlreadySubscribed = "User is already subscribed";
         public const string ExpiredToken = "Token ID expired";
         public const string WrongToken = "Wrong Token ID";
