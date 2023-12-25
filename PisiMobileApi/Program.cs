@@ -22,8 +22,8 @@ builder.Services.AddApiVersioning(o =>
     o.DefaultApiVersion = new Microsoft.AspNetCore.Mvc.ApiVersion(1, 0);
     o.ReportApiVersions = true;
     o.ApiVersionReader = ApiVersionReader.Combine(
-        new QueryStringApiVersionReader("api-version"),
-        new HeaderApiVersionReader("X-Version"),
+        //new QueryStringApiVersionReader("api-version"),
+        //new HeaderApiVersionReader("X-Version"),
         new MediaTypeApiVersionReader("ver"));
 
 });
@@ -34,6 +34,16 @@ builder.Services.AddVersionedApiExplorer(
         options.GroupNameFormat = "'v'VVV";
         options.SubstituteApiVersionInUrl = true;
     });
+
+builder.Host.ConfigureLogging(logging =>
+{
+    logging.AddLog4Net(log4NetConfigFile: "log4net.config");
+    logging.ClearProviders();
+    logging.AddConsole();//for Logging on Console 
+    logging.AddLog4Net();//for DB Query Logging
+});
+
+builder.Logging.AddLog4Net();
 
 // Register services
 
@@ -51,6 +61,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+//app.ConfigureExceptionHandler();
 
 app.UseHttpsRedirection();
 

@@ -12,6 +12,9 @@ using BusinessCore.Service;
 using CoreObject.DataTransferObject.Request;
 using CoreObject.Helpers;
 using Microsoft.EntityFrameworkCore;
+using System.Net;
+using System.Net.Http;
+using System;
 
 namespace BusinessCore.Integration
 {
@@ -180,6 +183,7 @@ namespace BusinessCore.Integration
                 }
                 finally
                 {
+                    LogService.LogInfo("00", "LogHandler", "Invoke", "Entries \r\n" + JsonConvert.SerializeObject(entry));
                     context.Response.Body = originalBody;
 
                     await appDbContext.RequestResponseEntries.AddAsync(entry);
@@ -187,21 +191,55 @@ namespace BusinessCore.Integration
 
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                LogService.LogError("00", "LogHandler", "Invoke", ex);
 
-                context.Response.StatusCode = 400;
-                context.Response.ContentType = "application/xml";
-                await context.Response.WriteAsJsonAsync(
-                new GlobalResponse
+                switch (ex)
                 {
-                    Message = "Internal processing error"
-                });
+                    case KeyNotFoundException e:
+                        // not found error
+                        context.Response.StatusCode = (int)HttpStatusCode.NotFound;
+                        context.Response.ContentType = "application/json";
+                        await context.Response.WriteAsJsonAsync(
+                                new GlobalResponse
+                                {
+                                    Message = "Request Not Found"
+                                });
+                        break;
+                    case BadHttpRequestException e:
+                        // bad request error
+                        context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+                        context.Response.ContentType = "application/json";
+                        await context.Response.WriteAsJsonAsync(
+                                    new GlobalResponse
+                                    {
+                                        Message = "Bad Request"
+                                    });
+                        break;
+                    default:
+                        // unhandled error
+                        context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+                        context.Response.ContentType = "application/json";
+                        await context.Response.WriteAsJsonAsync(
+                                            new GlobalResponse
+                                            {
+                                                Message = "Internal processing error"
+                                            });
+                        break;
+                }
+
+                //context.Response.StatusCode = 400;
+                //context.Response.ContentType = "application/xml";
+                //await context.Response.WriteAsJsonAsync(
+                //new GlobalResponse
+                //{
+                //    Message = "Internal processing error"
+                //});
                 return;
             }
 
         }
-
 
         private IncomingRequest CreateRequestResponseMessage(HttpContext context)
         {

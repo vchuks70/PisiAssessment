@@ -1,6 +1,7 @@
 ﻿using BusinessCore.Interface;
 using CoreObject.DataTransferObject.Request;
 using CoreObject.DataTransferObject.Response;
+using CoreObject.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -30,6 +31,13 @@ namespace PisiMobileApi.Controllers
         {
             var result = await _userAuthentication.Register(request);
             return result.RequestStatus ? Ok(result) : BadRequest(result);
+        }
+
+        [HttpGet("get-all-user-subscriptions")]
+        public async Task<ActionResult<IEnumerable<UserSubscriptionResponse>>> GetAllUserSubscriptions()
+        {
+            var ListOfCustomers = await _userAuthentication.GetAllUserSubscriptions();
+            return ListOfCustomers.Any() ? Ok(ListOfCustomers) : NoContent();
         }
     }
 }
